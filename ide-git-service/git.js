@@ -2,6 +2,12 @@ angular.module('ideGit', [])
     .provider('gitApi', function GitApiProvider() {
         this.gitServiceUrl = '/services/v4/ide/git';
         this.$get = ['$http', function gitApiFactory($http) {
+            function getErrorMessage(error) {
+                if (error)
+                    return JSON.parse(response.data.error).message;
+                else return 'Check console for more information.';
+            }
+
             let listProjects = function (resourcePath) {
                 if (resourcePath !== undefined && !(typeof resourcePath === 'string'))
                     throw Error("listProjects: resourcePath must be an string path");
@@ -11,11 +17,11 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
-            let cloneProject = function (workspace, repository, branch = '', username, password) {
+            let cloneRepository = function (workspace, repository, branch = '', username, password) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path('clone').build();
                 return $http.post(url, {
                     repository: repository,
@@ -27,11 +33,11 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
-            let pullProject = function (workspace, project, branch = '', username, password) {
+            let pullRepository = function (workspace, project, branch = '', username, password) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path(project).path('pull').build();
                 return $http.post(url, {
                     publish: true,
@@ -42,11 +48,24 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
-            let pushProject = function (workspace, project, branch = '', username, email, password) {
+            // This has to be implemented in the back-end. See issue #1984
+            let pullRepositories = async function (workspace, projects, username, password, callback) {
+                let response = { status: 200, message: '' };
+                for (let i = 0; i < projects.length; i++) {
+                    await pullRepository(workspace, projects[i], '', username, password).then(function (resp) {
+                        response.status = resp.status;
+                        if (response.status !== 200) response.message = resp.message;
+                    });
+                    if (response.status !== 200) break;
+                }
+                callback(response);
+            }.bind(this);
+
+            let pushRepository = function (workspace, project, branch = '', username, email, password) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path(project).path('push').build();
                 return $http.post(url, {
                     username: username,
@@ -57,11 +76,11 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
-            let pushAllProjects = function (workspace, username, email, password) {
+            let pushAllRepositories = function (workspace, username, email, password) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path('push').build();
                 return $http.post(url, {
                     username: username,
@@ -71,17 +90,17 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
-            let resetProject = function (workspace, project) {
+            let resetRepository = function (workspace, project) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path(project).path('reset').build();
                 return $http.post(url, {}).then(function successCallback(response) {
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -91,7 +110,7 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -102,7 +121,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Workspace service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -131,7 +150,7 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -146,7 +165,7 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -170,7 +189,7 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -196,7 +215,7 @@ angular.module('ideGit', [])
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
                     console.error('Git service:', response);
-                    return { status: response.status };
+                    return { status: response.status, message: getErrorMessage(response.data.error) };
                 });
             }.bind(this);
 
@@ -215,7 +234,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -231,7 +250,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data.files };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -247,7 +266,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data.files };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -263,7 +282,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -279,7 +298,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -295,7 +314,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -311,7 +330,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -327,7 +346,7 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
@@ -343,17 +362,18 @@ angular.module('ideGit', [])
                         return { status: response.status, data: response.data };
                     }, function errorCallback(response) {
                         console.error('Git service:', response);
-                        return { status: response.status };
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
                     });
             }.bind(this);
 
             return {
                 listProjects: listProjects,
-                cloneProject: cloneProject,
-                pullProject: pullProject,
-                pushProject: pushProject,
-                pushAllProjects: pushAllProjects,
-                resetProject: resetProject,
+                cloneRepository: cloneRepository,
+                pullRepository: pullRepository,
+                pullRepositories: pullRepositories,
+                pushRepository: pushRepository,
+                pushAllRepositories: pushAllRepositories,
+                resetRepository: resetRepository,
                 importProjects: importProjects,
                 deleteRepository: deleteRepository,
                 shareProject: shareProject,
