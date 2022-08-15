@@ -80,12 +80,14 @@ angular.module('ideGit', [])
                 });
             }.bind(this);
 
-            let pushAllRepositories = function (workspace, username, email, password) {
+            let pushAllRepositories = function (workspace, username, email, password, autoAdd = false, autoCommit = false) {
                 let url = new UriBuilder().path(this.gitServiceUrl.split('/')).path(workspace).path('push').build();
                 return $http.post(url, {
                     username: username,
                     password: btoa(password),
                     email: email,
+                    autoAdd: autoAdd,
+                    autoCommit: autoCommit,
                 }).then(function successCallback(response) {
                     return { status: response.status, data: response.data };
                 }, function errorCallback(response) {
