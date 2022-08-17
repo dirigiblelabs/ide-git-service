@@ -171,6 +171,56 @@ angular.module('ideGit', [])
                 });
             }.bind(this);
 
+            let createBranch = function (workspace, project, branch, local = true, username, password) {
+                let branchType = 'local';
+                let body = {};
+                if (!local) {
+                    branchType = 'remote';
+                    body['username'] = username;
+                    body['password'] = btoa(password);
+                }
+                let url = new UriBuilder()
+                    .path(this.gitServiceUrl.split('/'))
+                    .path(workspace)
+                    .path(project)
+                    .path('branches')
+                    .path(branchType)
+                    .path(branch)
+                    .build();
+                return $http.post(url, body)
+                    .then(function successCallback(response) {
+                        return { status: response.status, data: response.data };
+                    }, function errorCallback(response) {
+                        console.error('Git service:', response);
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
+                    });
+            }.bind(this);
+
+            let deleteBranch = function (workspace, project, branch, local = true, username, password) {
+                let branchType = 'local';
+                let body = {};
+                if (!local) {
+                    branchType = 'remote';
+                    body['username'] = username;
+                    body['password'] = btoa(password);
+                }
+                let url = new UriBuilder()
+                    .path(this.gitServiceUrl.split('/'))
+                    .path(workspace)
+                    .path(project)
+                    .path('branches')
+                    .path(branchType)
+                    .path(branch)
+                    .build();
+                return $http.delete(url, { data: body, headers: { 'Content-Type': 'application/json;charset=utf-8' } })
+                    .then(function successCallback(response) {
+                        return { status: response.status, data: response.data };
+                    }, function errorCallback(response) {
+                        console.error('Git service:', response);
+                        return { status: response.status, message: getErrorMessage(response.data.error) };
+                    });
+            }.bind(this);
+
             let commit = function (
                 workspace,
                 project,
@@ -380,6 +430,8 @@ angular.module('ideGit', [])
                 deleteRepository: deleteRepository,
                 shareProject: shareProject,
                 checkoutBranch: checkoutBranch,
+                createBranch: createBranch,
+                deleteBranch: deleteBranch,
                 commit: commit,
                 push: push,
                 branches: branches,
