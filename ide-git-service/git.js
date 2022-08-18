@@ -343,7 +343,7 @@ angular.module('ideGit', [])
                     .path(this.gitServiceUrl.split('/'))
                     .path(workspace)
                     .path(project)
-                    .path('fetch-urls')
+                    .path('fetch-url')
                     .build();
                 return $http.post(url, { url: fetchUrl })
                     .then(function successCallback(response) {
@@ -359,7 +359,7 @@ angular.module('ideGit', [])
                     .path(this.gitServiceUrl.split('/'))
                     .path(workspace)
                     .path(project)
-                    .path('push-urls')
+                    .path('push-url')
                     .build();
                 return $http.post(url, { url: pushUrl })
                     .then(function successCallback(response) {
